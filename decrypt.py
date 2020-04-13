@@ -1,66 +1,49 @@
 from collections import defaultdict
+
 # each byte in hex is represented as a 2 character string
 # key is measured in multiples of chunkLen
 # i.e. key length of 1 means key is 1 chunkLen or 2 characters or 1 hex byte
 chunkLen = 2
-# assume text and key is in printable ascii character range
-candidates = range(32, 127)
-xored = defaultdict(dict)
+
+
+def encrypt():
+    key = 'mysecret'
+    key_hex = [hex(ord(k)).lstrip('0x') for k in key]
+    plain_text = 'rushingtostaveoffashortageofmedicalgradeprotectivegeartocombatthespreadofthecoronavirusminnesotaofficialsleanedonalocalcompanysglobalconnectionstoairliftacacheofmasksfromachinesefactorybacktothestatefordeliverythisweekwashingtonstatepurchasedcottonswabsforcoronavirusteststakingariskbecausetheproductlocatedbyofficialshasnotyetbeenapprovedbythefoodanddrugadministrationthestateisalsobettingthataseattlebasedoutdoorgearcompanyknownforitsbackpacksandparkascanreconfigureitsoperationstoproducen95respiratorsandcaliforniaactingasanationstateinthewordsofthegovernorbeganbuying200millionmaskspermonthtoshoreupsuppliesinthatstateandpotentiallyacrossthecountryadelsewheresomegovernorsandlawmakershavewatchedindisbeliefastheyhavesoughttoclosedealsonprecioussuppliesonlytohavethefederalgovernmentswoopintopreemptthearrangementsofficialsinonestatearesoworriedaboutthispossibilitythattheyareconsideringdispatchinglocalpoliceoreventhenationalguardtogreettwocharteredfedexplanesscheduledtoarriveinthenextweekwithmillionsofmasksfromchinaaccordingtopeoplefamiliarwiththeplanningthesepeoplewhospokeontheconditionofanonymityaskedthattheirstatenotbeidentifiedtoavoidflaggingfederalofficialstotheirshipmentasthetrumpadministrationassumeswhatthepresidenthascalledabackuproleindistributingsuppliestofightthepandemicstategovernmentsaretakingextraordinaryandoftenunorthodoxstepstocompeteinanincreasinglycutthroatglobalmarketplaceadsignupforourcoronavirusupdatesnewslettertotracktheoutbreakallstorieslinkedinthenewsletterarefreetoaccesstheresultisapatchworkandoftenchaoticscrambleforgoodspittingstatesagainsteachotherandoftenagainstothercountriesoreventheusgovernmentweredoingwhateveryoneelseisdoingohiogovmikedewinersaidinaninterviewyouvegot50statesandthefederalgovernmentallchasingthesamecompaniesitscrazysoaringpriceshaveleftstatesattimestopayupto10timesthenormalpricesforcertaingoodsaccordingtoofficialsfrommultiplestateseatingawayatcashreservesandlayingthefoundationforafiscalcrunchthatseveralgovernorsbelievewillrequirefederalbailoutswindfallssofargolargelytoforeigncompaniesthatmaketheequipmentalongwiththirdpartybrokersthatoftenhelpconnectstateswithmanufacturersandthengetacutaccordingtostateofficialsandbusinesspeopleadworriedaboutlosingpotentialdealsstategovernmentshavetossedasidelongstandingpurchasingrulesabouthowtospendtaxpayermoneyofferingfundsupfrontforequipmentbeforeitdisappearsgovernorsandtopaidesarespendinghoursonthephonehuntingforfriendsrelativesofaidesorotherpersonalconnectionsthatmightgivethemanedgeteamsofseniorstateaides—whoinnormaltimesoverseeissuessuchasclimatechangeandhealthpolicy—sitinconferenceroomsandbidalldaythefrenzyinvitesthepotentialforfraudaccordingtoseveralaidestogovernorswithofficialsinnewjerseyillinoismassachusettsconnecticutandwashingtonstateallsayingtheyhavebeeninundatedwithpitchesfromlikelyscamartistsohiogovmikedewineleftohiodepartmentofhealthdirectoramyactonandltgovjonhustedarriveforadailyupdateonthestatescoronavirusresponseattheohiostatehouseincolumbuslastmonthohiogovmikedewineleftohiodepartmentofhealthdirectoramyactonandltgovjonhustedarriveforadailyupdateonthestatescoronavirusresponseattheohiostatehouseincolumbuslastmonthjoshuaabickelcolumbusdispatchaphelpfromthefederalgovernmentisinconsistentwithsomegovernorshavingluckworkingwiththeirregionaldirectorsfromthefederalemergencymanagementagencyothersfindinganinwithjaredkushnerawhitehouseadviserandthepresidentssoninlawandsomeappealingdirectlytopresident'
+    plain_hex = [hex(ord(pt)).lstrip('0x') for pt in plain_text]
+
+    cypher_hex_str = ''
+    for idx, ph in enumerate(plain_hex):
+        cypher_hex_str += hex(int(ph, 16) ^ int(key_hex[idx % len(key_hex)], 16)).lstrip('0x')
+
+    return cypher_hex_str
+
 
 with open('cypher.txt', 'r') as f:
     cypher = f.read()
     cypherArray = [cypher[i:i + chunkLen] for i in range(0, len(cypher), chunkLen)]
-    p = defaultdict(dict)
+    candidates = defaultdict(dict)
+    totals = defaultdict(dict)
 
+    for keyLen in range(2, 14):
+        # get all streams for current key length
+        candidates[keyLen] = dict(
+            zip(
+                [i for i in range(0, keyLen)],
+                [cypherArray[i::keyLen] for i in range(0, keyLen)]
+            )
+        )
 
-    # assume key length is at least 2
-    for keyLen in range(1, 14):
-        count = 1
+        for cIdx, candidate in candidates.items():
+            for sIdx, stream in candidate.items():
+                totals[cIdx][sIdx] = 0
+                for c in (list(set(stream))):
+                    totals[cIdx][sIdx] += (stream.count(c) / len(stream)) ** 2
 
-        selection = []
-        totalTotal = 0
-        while True and len(cypherArray) > keyLen * count - 1:
-            # go to start of last chunk of key
-            #f.seek(keyLen * chunkLen * count - chunkLen)
-            #chunk = f.read(chunkLen)
-            chunk = cypherArray[keyLen * count - 1]
-            selection.append(chunk)
-            # passed end of cypher text
-            #if not chunk:
-            #    break
-
-            # convert to integer as if it were hex
-            #num = int(chunk, 16)
-
-            # try getting
-            # calculate incidence of occurrence using sum of squares
-            # iterate over every Nth character up to N == keyLen
-            count += 1
-
-        pL = defaultdict()
-        pL['total'] = 0
-        for s in list(set(selection)):
-            #pL[s] = selection.count(s) / len(selection)
-            pL['total'] += (selection.count(s) / len(selection) - 1/255) ** 2
-
-        print(pL)
-
-        #pL['total'] += ((1 / len(selection) - 1/256) ** 2)
-        #totalTotal += pL['total']
-        #print('key length: {} , frequency: {}'.format(keyLen, pL['total']))
-        #For each keyLen:keyLen
-        #    select every Nth character. For each character, calculate its frequency in the selection
-        #    - repeat every Nth character selection until all charcters have been selected, and sum frequencies
-        #    - sum using (frequency[i] - 1/256) ^ 2
-
-
-            # we want to find the
-            # for c in candidates:
-            #   plainText = c ^ num
-            #  if 31 < plainText < 48 < plainText < 58 < plainText < 127:
-            #     xored[c][count] = plainText
-
-            #count += 1
-            #print(chunk)
+        print('Key length: {}. Bytes: {}. IC: {}'.format(
+            keyLen,
+            len(stream),
+            sum([val for v, val in totals[cIdx].items()]) / len(totals[cIdx]))
+        )
 
 f.close()

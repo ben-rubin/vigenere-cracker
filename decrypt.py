@@ -14,10 +14,16 @@ def encrypt():
 
     cypher_hex_str = ''
     for idx, ph in enumerate(plain_hex):
-        cypher_hex_str += hex(int(ph, 16) ^ int(key_hex[idx % len(key_hex)], 16)).lstrip('0x')
+        # convert to hex string, strip 0x and pad with zeros to 2 characters
+        cypher_hex_str += '{0:0{1}x}'.format(int(ph, 16) ^ int(key_hex[idx % len(key_hex)], 16), 2)
 
     return cypher_hex_str
 
+
+def decrypt(cypher_text, key):
+    plain_text = ''
+    for idx, c in cypher_text:
+        plain_text += int()
 
 with open('cypher.txt', 'r') as f:
     cypher = f.read()

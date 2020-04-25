@@ -17,20 +17,26 @@ def int_to_hex_str(num):
 # i.e encrypt('a', 'a') will output '00'
 def encrypt(key, plain_text):
     key_hex = ascii_string_to_hex_array(key)
+    key_hex_len = len(key_hex)
+
     plain_hex = ascii_string_to_hex_array(plain_text)
 
     cypher_hex_str = ''
     for idx, ph in enumerate(plain_hex):
         # xor plain text and key
-        cypher_hex_str += int_to_hex_str(int(ph, 16) ^ int(key_hex[idx % len(key_hex)], 16))
+        cypher_hex_str += int_to_hex_str(int(ph, 16) ^ int(key_hex[idx % key_hex_len], 16))
 
     return cypher_hex_str
 
 
-def decrypt(cypher_text, key):
+def decrypt(cypher, key):
     plain_text = ''
-    for idx, c in cypher_text:
-        plain_text += int()
+    key_array = [cypher[i:i + 2] for i in range(0, len(key), 2)]
+    cypher_array = [cypher[i:i + 2] for i in range(0, len(cypher), 2)]
+    for idx, c in cypher_array:
+        plain_text += ascii(int(c, 16) ^ int(key[idx % len(key_array)]))
+
+    return plain_text
 
 
 def get_streams_for_key_len(cypher_array, key_len):
@@ -46,38 +52,33 @@ def get_streams_for_key_len(cypher_array, key_len):
 def get_average_stream_ic(streams):
     totals = defaultdict()
     for sIdx, stream in streams.items():
+        stream_length = len(stream)
         totals[sIdx] = 0
         for c in (list(set(stream))):
-            totals[sIdx] += (stream.count(c) / len(stream) - 1/255) ** 2
+            totals[sIdx] += (stream.count(c) / stream_length - 1/255) ** 2
 
     return sum([val for v, val in totals.items()]) / len(totals)
 
 
-def find_key_len():
-    with open('cypher.txt', 'r') as f:
-        cypher = f.read()
-        # chunk cypher into array of 2 character strings
-        # each element represents a single hex digit
-        cypher_array = [cypher[i:i + 2] for i in range(0, len(cypher), 2)]
-        # initialize storage
-        candidates = defaultdict()
-        totals = defaultdict()
+def find_key_len(cypher):
+    # chunk cypher into array of 2 character strings
+    # each element represents a single hex digit
+    cypher_array = [cypher[i:i + 2] for i in range(0, len(cypher), 2)]
+    # initialize storage
+    candidates = defaultdict()
+    totals = defaultdict()
 
-        for key_len in range(2, 19):
-            # get all streams for current key length
-            candidates[key_len] = get_streams_for_key_len(cypher_array, key_len)
-            # get ic for streams for current key length
-            totals[key_len] = get_average_stream_ic(candidates[key_len])
+    for key_len in range(2, 19):
+        # get all streams for current key length
+        candidates[key_len] = get_streams_for_key_len(cypher_array, key_len)
+        # get ic for streams for current key length
+        totals[key_len] = get_average_stream_ic(candidates[key_len])
 
-            print('Key length: {}. Bytes: {}. IC: {}'.format(
-                key_len,
-                len(candidates[key_len].items()),
-                totals[key_len]
-            ))
+        print('Key length: {}. Bytes: {}. IC: {}'.format(
+            key_len,
+            len(candidates[key_len].items()),
+            totals[key_len]
+        ))
 
-    f.close()
+    return [k for k, v in totals.items() if v == max(totals.values())][0]
 
-    return max(totals.items())
-
-probably_key_len = find_key_len()
-print(f'It looks like the key length is {probably_key_len}, or {probably_key_len} is a multiple of the true key length')

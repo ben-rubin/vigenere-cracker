@@ -32,9 +32,10 @@ def encrypt(key, plain_text):
 def decrypt(cypher, key):
     plain_text = ''
     key_array = [cypher[i:i + 2] for i in range(0, len(key), 2)]
+    key_array_len = len(key_array)
     cypher_array = [cypher[i:i + 2] for i in range(0, len(cypher), 2)]
     for idx, c in cypher_array:
-        plain_text += ascii(int(c, 16) ^ int(key[idx % len(key_array)]))
+        plain_text += ascii(int(c, 16) ^ int(key_array[idx % key_array_len]))
 
     return plain_text
 
@@ -48,23 +49,42 @@ def get_streams_for_key_len(cypher_array, key_len):
     )
 
 
-# calculate average incidence of coincidence for streams
+# calculate index of coincidence for a single stream
+def get_stream_ic(stream):
+    total = 0
+    stream_length = len(stream)
+    for c in (list(set(stream))):
+        total += (stream.count(c) / stream_length) ** 2
+        # total += (stream.count(c) / stream_length - 1/255) ** 2
+
+    return total
+
+
+# calculate average index of coincidence for streams
 def get_average_stream_ic(streams):
     totals = defaultdict()
     for sIdx, stream in streams.items():
-        stream_length = len(stream)
-        totals[sIdx] = 0
-        for c in (list(set(stream))):
-            totals[sIdx] += (stream.count(c) / stream_length - 1/255) ** 2
+        totals[sIdx] = get_stream_ic(stream)
 
     return sum([val for v, val in totals.items()]) / len(totals)
 
 
+# could use refactoring
+# 1. Get all streams for key len 2 to 19 (these lengths are arbitrary)
+# 2. Get ic (index of coincidence) averages for stream sets for each key length
+# 3. Print stream average for each key len
+# 3. Calculate highest ic and return it
+def get_cypher_array(cypher):
+    chunk = 2
+    return [cypher[i:i + chunk] for i in range(0, len(cypher), chunk)]
+
+
+# assume key in range(2, 19)
 def find_key_len(cypher):
     # chunk cypher into array of 2 character strings
     # each element represents a single hex digit
-    cypher_array = [cypher[i:i + 2] for i in range(0, len(cypher), 2)]
     # initialize storage
+    cypher_array = get_cypher_array(cypher)
     candidates = defaultdict()
     totals = defaultdict()
 
@@ -81,4 +101,8 @@ def find_key_len(cypher):
         ))
 
     return [k for k, v in totals.items() if v == max(totals.values())][0]
+
+
+def find_key(cypher, key_len):
+    streams = get_streams_for_key_len(cypher, key_len)
 

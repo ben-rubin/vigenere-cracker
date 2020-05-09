@@ -1,22 +1,26 @@
-from vigenere_cracker import find_key_len, get_streams_for_key_len, get_cypher_array, get_stream_ic
+from vigenere_cracker import find_key_len_candidates, decrypt, find_key
+
+
+def print_totals(totals_to_print):
+    for t_idx, total in totals_to_print.items():
+        print('Key length: {}. Index of coincidence: {}'.format(t_idx, round(totals_to_print[t_idx], 3)))
+
+
+def get_user_key_choice(totals_to_show_user):
+    print_totals(totals_to_show_user)
+    probable_key_len = [k for k, v in totals_to_show_user.items() if v == max(totals_to_show_user.values())][0]
+    print(f'\nIt looks like the key length is {probable_key_len}, or {probable_key_len} is a multiple of the true key length')
+    print(f'\nPlease choose one (the higher the better):')
+
+    return int(input())
+
 
 with open('cypher.txt', 'r') as f:
     cypher = f.read().strip('\n')
-    probable_key_len = find_key_len(cypher)
-    print(f'It looks like the key length is {probable_key_len}, or {probable_key_len} is a multiple of the true key length')
-
-    x = zip([i for i in range(32, 177)], [chr(i) for i in range(32, 177)])
-    candidates = dict()
-
-    streams = get_streams_for_key_len(get_cypher_array(cypher), 7)
-    for stream in streams.values():
-        for n in range(1, 255):
-            distribution = [int(c, 16) ^ n for c in stream]
-
-            if max(distribution) < 127 and min(distribution) > 32:
-                # assign key value (n) array of alphabetic characters
-                candidates[n] = [d for d in distribution if d in [*range(65, 90), *range(97, 122)]]
-
-
-
     f.close()
+
+totals = find_key_len_candidates(cypher)
+choice = get_user_key_choice(totals)
+probable_key = find_key(cypher, choice)
+plain_text = decrypt(cypher, probable_key)
+print(plain_text)
